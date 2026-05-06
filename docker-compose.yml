@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  node1:
+    build: .
+    container_name: node1
+    environment:
+      - PORT=8001
+    command: ./node
+    ports:
+      - "8001:8001"
+
+  node2:
+    build: .
+    container_name: node2
+    environment:
+      - PORT=8002
+    command: ./node
+    ports:
+      - "8002:8002"
+
+  node3:
+    build: .
+    container_name: node3
+    environment:
+      - PORT=8003
+    command: ./node
+    ports:
+      - "8003:8003"
+
+  router:
+    build: .
+    container_name: router
+    depends_on:
+      - node1
+      - node2
+      - node3
+    command: ./router
+    ports:
+      - "9000:9000"
