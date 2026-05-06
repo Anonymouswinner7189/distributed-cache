@@ -15,9 +15,9 @@ func main() {
 	}
 
 	nodes := []string {
-		"http://localhost:8001",
-		"http://localhost:8002",
-		"http://localhost:8003",
+		"http://node1:8001",
+		"http://node2:8002",
+		"http://node3:8003",
 	}
 
 	ring := hashing.NewHashRing()
@@ -26,7 +26,7 @@ func main() {
 	}
 
 	http.HandleFunc("/",func(w http.ResponseWriter, r *http.Request){
-		w.Write([]byte("Router running"))
+		w.Write([]byte("Router running\n"))
 	})
 
 	http.HandleFunc("/set", func(w http.ResponseWriter, r *http.Request){
@@ -47,28 +47,46 @@ func main() {
 		}
 
 		log.Println("SET key:", key, "→ nodes:", nodes)
-		w.Write([]byte("Replicated successfully"))
+		w.Write([]byte("Replicated successfully\n"))
 	})
 
 	http.HandleFunc("/get", func(w http.ResponseWriter, r *http.Request){
 		key := r.URL.Query().Get("key")
 		nodes := ring.GetNodes(key,2)
-		node := nodes[0]
-		url := node + "/get?key=" + key
 
-		resp, err := http.Get(url)
-		if err != nil {
+		var lastErr error
+
+		for _, node := range nodes {
+			url := node + "/get?key=" + key
+
+			resp, err := http.Get(url)
+			if err != nil {
+				log.Println("Node unreachable:", node)
+				lastErr = err
+				continue
+			}
+
+			body, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+
+			if resp.StatusCode == http.StatusOK {
+				log.Println("GET key:", key, "FOUND at node:", node)
+				w.WriteHeader(http.StatusOK)
+				w.Write(body)
+				return
+			}
+
+			log.Println("GET key:", key, "NOT FOUND at node:", node)
+		}
+
+		if lastErr != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error getting key"))
+			w.Write([]byte("All nodes unreachable\n"))
 			return
 		}
-		defer resp.Body.Close()
 
-		body, _ := io.ReadAll(resp.Body)
-		w.WriteHeader(resp.StatusCode)
-		w.Write(body)
-
-		log.Println("GET key:", key, "→ node:", node)
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("Key not found\n"))
 	})
 
 	log.Println("Router running on port 9000")
