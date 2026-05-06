@@ -25,7 +25,7 @@ func main() {
 		key := r.URL.Query().Get("key")
 		value := r.URL.Query().Get("value")
 
-		c.Set(key, value, 40*time.Second)
+		c.Set(key, value, 300*time.Second)
 		w.Write([]byte("Key set"))
 	})
 
