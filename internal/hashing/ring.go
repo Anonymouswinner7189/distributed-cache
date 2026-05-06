@@ -10,11 +10,13 @@ import (
 type HashRing struct {
 	nodes map[uint32]string
 	keys []uint32
+	physicalNodes map[string]bool
 }
 
 func NewHashRing() *HashRing {
 	return &HashRing {
 		nodes : make(map[uint32]string),
+		physicalNodes: make(map[string]bool),
 		keys: []uint32{},
 	}
 }
@@ -24,6 +26,8 @@ func hashKey(key string) uint32 {
 }
 
 func (h *HashRing) AddNode(node string) {
+	h.physicalNodes[node] = true
+
 	const virtualNodes = 100
 	for i:=range virtualNodes {
 		virtualKey := node + "#" + strconv.Itoa(i)
@@ -35,20 +39,35 @@ func (h *HashRing) AddNode(node string) {
 	slices.Sort(h.keys)
 }
 
-func (h *HashRing) GetNode(key string) string {
+func (h *HashRing) GetNodes(key string, count int) []string {
 	if len(h.nodes) == 0 {
-		return ""
+		return nil
+	}
+
+	if count > len(h.physicalNodes) {
+		count = len(h.physicalNodes)
 	}
 
 	hash := hashKey(key)
-
 	idx := sort.Search(len(h.keys), func(i int) bool {
 		return h.keys[i] >= hash
 	})
 
-	if(idx == len(h.keys)) {
-		idx = 0
+	result := []string{}
+	visited := make(map[string]bool)
+
+	for len(result) < count {
+		if idx == len(h.keys) {
+			idx = 0
+		}
+		node := h.nodes[h.keys[idx]]
+		// Avoid duplicate physical nodes (because of virtual nodes)
+		if !visited[node] {
+			result = append(result, node)
+			visited[node] = true
+		}
+		idx++
 	}
 
-	return h.nodes[h.keys[idx]]
+	return result
 }

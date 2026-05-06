@@ -33,26 +33,30 @@ func main() {
 		key := r.URL.Query().Get("key")
 		value := r.URL.Query().Get("value")
 
-		node := ring.GetNode(key)
-		url := node + "/set?key=" + key + "&value=" + value
+		nodes := ring.GetNodes(key, 2) // replication factor of 2
 
-		resp, err := http.Get(url)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error setting key"))
-			return
+		for _, node := range nodes {
+			url := node + "/set?key=" + key + "&value=" + value
+
+			resp, err := http.Post(url, "application/json", nil)
+			if err != nil {
+				log.Println("Write failed for node:", node)
+				continue
+			}
+			resp.Body.Close()
 		}
-		defer resp.Body.Close()
 
-		log.Println("SET key:", key, "→ node:", node)
+		log.Println("SET key:", key, "→ nodes:", nodes)
+		w.Write([]byte("Replicated successfully"))
 	})
 
 	http.HandleFunc("/get", func(w http.ResponseWriter, r *http.Request){
 		key := r.URL.Query().Get("key")
-		node := ring.GetNode(key)
+		nodes := ring.GetNodes(key,2)
+		node := nodes[0]
 		url := node + "/get?key=" + key
 
-		resp, err := http.Post(url, "application/json", nil)
+		resp, err := http.Get(url)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Error getting key"))
