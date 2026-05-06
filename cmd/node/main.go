@@ -18,7 +18,7 @@ func main() {
 	c.StartCleanup(10*time.Second)
 
 	http.HandleFunc("/health",func(w http.ResponseWriter,r *http.Request){
-		w.Write([]byte("OK"))
+		w.Write([]byte("OK\n"))
 	})
 
 	http.HandleFunc("/set", func(w http.ResponseWriter, r *http.Request){
@@ -26,7 +26,7 @@ func main() {
 		value := r.URL.Query().Get("value")
 
 		c.Set(key, value, 300*time.Second)
-		w.Write([]byte("Key set"))
+		w.Write([]byte("Key set\n"))
 	})
 
 	http.HandleFunc("/get",func(w http.ResponseWriter,r *http.Request){
@@ -35,7 +35,7 @@ func main() {
 		val, ok := c.Get(key)
 		if !ok {
 			w.WriteHeader(http.StatusNotFound)
-			w.Write([]byte("Key not found"))
+			w.Write([]byte("Key not found\n"))
 			return
 		}
 
