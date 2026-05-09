@@ -1,11 +1,10 @@
 package main
 
 import (
-	"distributed-cache/internal/cache"
+	"distributed-cache/internal/node"
 	"log"
 	"net/http"
 	"os"
-	"time"
 )
 
 func main() {
@@ -14,34 +13,8 @@ func main() {
 		port = "8001"
 	}
 
-	c := cache.NewCache()
-	c.StartCleanup(10*time.Second)
+	server := node.NewServer()
 
-	http.HandleFunc("/health",func(w http.ResponseWriter,r *http.Request){
-		w.Write([]byte("OK\n"))
-	})
-
-	http.HandleFunc("/set", func(w http.ResponseWriter, r *http.Request){
-		key := r.URL.Query().Get("key")
-		value := r.URL.Query().Get("value")
-
-		c.Set(key, value, 300*time.Second)
-		w.Write([]byte("Key set\n"))
-	})
-
-	http.HandleFunc("/get",func(w http.ResponseWriter,r *http.Request){
-		key := r.URL.Query().Get("key")
-
-		val, ok := c.Get(key)
-		if !ok {
-			w.WriteHeader(http.StatusNotFound)
-			w.Write([]byte("Key not found\n"))
-			return
-		}
-
-		w.Write([]byte(val))
-	})
-
-	log.Println("Starting cache node on port",port)
-	log.Fatal(http.ListenAndServe(":"+port,nil))
+	log.Println("Starting cache node on port: ", port)
+	log.Fatal(http.ListenAndServe(":"+port, server.Routes()))
 }

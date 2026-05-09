@@ -6,13 +6,13 @@ import (
 )
 
 type Item struct {
-	Value string
+	Value      string
 	Expiration int64
 }
 
 type Cache struct {
 	store map[string]Item
-	mu sync.RWMutex
+	mu    sync.RWMutex
 }
 
 func NewCache() *Cache {
@@ -31,7 +31,7 @@ func (c *Cache) Set(key, value string, ttl time.Duration) {
 	}
 
 	c.store[key] = Item{
-		Value: value,
+		Value:      value,
 		Expiration: exp,
 	}
 }
@@ -44,12 +44,12 @@ func (c *Cache) Get(key string) (string, bool) {
 	if !exists {
 		return "", false
 	}
-	
+
 	if item.Expiration > 0 && time.Now().UnixNano() > item.Expiration {
 		c.Delete(key)
 		return "", false
 	}
-	
+
 	return item.Value, true
 }
 
@@ -59,7 +59,7 @@ func (c *Cache) Delete(key string) {
 	delete(c.store, key)
 }
 
-func (c* Cache) StartCleanup(interval time.Duration) {
+func (c *Cache) StartCleanup(interval time.Duration) {
 	go func() {
 		for {
 			time.Sleep(interval)
@@ -68,7 +68,7 @@ func (c* Cache) StartCleanup(interval time.Duration) {
 
 			c.mu.Lock()
 			for key, value := range c.store {
-				if value.Expiration >0 && now > value.Expiration {
+				if value.Expiration > 0 && now > value.Expiration {
 					delete(c.store, key)
 				}
 			}

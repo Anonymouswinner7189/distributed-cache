@@ -1,4 +1,4 @@
-package hashing
+package consistenthash
 
 import (
 	"hash/crc32"
@@ -8,16 +8,16 @@ import (
 )
 
 type HashRing struct {
-	nodes map[uint32]string
-	keys []uint32
+	nodes         map[uint32]string
+	keys          []uint32
 	physicalNodes map[string]bool
 }
 
 func NewHashRing() *HashRing {
-	return &HashRing {
-		nodes : make(map[uint32]string),
+	return &HashRing{
+		nodes:         make(map[uint32]string),
 		physicalNodes: make(map[string]bool),
-		keys: []uint32{},
+		keys:          []uint32{},
 	}
 }
 
@@ -29,7 +29,7 @@ func (h *HashRing) AddNode(node string) {
 	h.physicalNodes[node] = true
 
 	const virtualNodes = 100
-	for i:=range virtualNodes {
+	for i := range virtualNodes {
 		virtualKey := node + "#" + strconv.Itoa(i)
 		hash := hashKey(virtualKey)
 		h.nodes[hash] = node
