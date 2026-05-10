@@ -21,6 +21,7 @@ func NewServer() *Server {
 	mux.HandleFunc("/health", h.Health)
 	mux.HandleFunc("/set", h.Set)
 	mux.HandleFunc("/get", h.Get)
+	mux.HandleFunc("/delete", h.Delete)
 
 	return &Server{
 		mux: mux,
